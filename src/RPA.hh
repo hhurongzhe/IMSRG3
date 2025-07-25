@@ -20,55 +20,47 @@
 #ifndef RPA_hh
 #define RPA_hh 1
 
-#include <armadillo>
-
 #include "ModelSpace.hh"
 #include "Operator.hh"
-
+#include <armadillo>
 
 class RPA
 {
- public:
-  // Fields
-  ModelSpace * modelspace; ///< Pointer to the associated modelspace
+  public:
+    // Fields
+    ModelSpace *modelspace; ///< Pointer to the associated modelspace
 
-  Operator H;
-  arma::mat A;  
-  arma::mat B;  
-  arma::mat X;
-  arma::mat Y;
-  arma::vec Energies;
-  size_t channel;
+    Operator H;
+    arma::mat A;
+    arma::mat B;
+    arma::mat X;
+    arma::mat Y;
+    arma::vec Energies;
+    size_t channel;
 
+    // Methods
+    RPA(); ///< Default constructor
+    RPA(ModelSpace &ms);
+    RPA(Operator &H);
 
-  // Methods
-  RPA(); ///< Default constructor
-  RPA(ModelSpace& ms);
-  RPA(Operator& H);
+    void ConstructAMatrix(int J, int parity, int Tz, bool Isovector);
+    void ConstructBMatrix(int J, int parity, int Tz, bool Isovector);
 
-  void ConstructAMatrix(int J, int parity, int Tz, bool Isovector);
-  void ConstructBMatrix(int J, int parity, int Tz, bool Isovector);
+    void ConstructAMatrix_byIndex(size_t ich_CC, bool Isovector);
+    void ConstructBMatrix_byIndex(size_t ich_CC, bool Isovector);
+    //  void SolveTDA();
+    void SolveCP(); // core polarization, i.e. 1st order approximation of TDA
+    void SolveTDA();
+    void SolveRPA();
 
-  void ConstructAMatrix_byIndex(size_t ich_CC, bool Isovector);
-  void ConstructBMatrix_byIndex(size_t ich_CC, bool Isovector);
-//  void SolveTDA();
-  void SolveCP(); // core polarization, i.e. 1st order approximation of TDA
-  void SolveTDA();
-  void SolveRPA();
+    double GetEgs();
 
-  double GetEgs();
+    double TransitionToGroundState(Operator &OpIn, size_t mu);
+    double PVCouplingEffectiveCharge(Operator &OpIn, size_t k, size_t l);
 
-  double TransitionToGroundState( Operator& OpIn, size_t mu );
-  double PVCouplingEffectiveCharge( Operator& OpIn, size_t k, size_t l);
-
-  arma::vec GetX(size_t i);
-  arma::vec GetY(size_t i);
-  arma::vec GetEnergies();
-
+    arma::vec GetX(size_t i);
+    arma::vec GetY(size_t i);
+    arma::vec GetEnergies();
 };
-
-
-
-
 
 #endif

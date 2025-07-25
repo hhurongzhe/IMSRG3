@@ -21,32 +21,32 @@
 #define TensorCommutators_hh 1
 
 #include "Operator.hh"
-#include <map>
-#include <array>
 #include <armadillo>
+#include <array>
+#include <map>
 
 namespace Commutator
 {
 
-    void DoTensorPandyaTransformation(const Operator &Z, std::map<std::array<index_t, 2>, arma::mat> &);
-    void DoTensorPandyaTransformation_SingleChannel(const Operator &Z, arma::mat &X, int ch_bra_cc, int ch_ket_cc);
-    void AddInverseTensorPandyaTransformation(Operator &Z, const std::map<std::array<index_t, 2>, arma::mat> &);
-    std::deque<arma::mat> InitializePandya(Operator &Z, size_t nch, std::string orientation);
+void DoTensorPandyaTransformation(const Operator &Z, std::map<std::array<index_t, 2>, arma::mat> &);
+void DoTensorPandyaTransformation_SingleChannel(const Operator &Z, arma::mat &X, int ch_bra_cc, int ch_ket_cc);
+void AddInverseTensorPandyaTransformation(Operator &Z, const std::map<std::array<index_t, 2>, arma::mat> &);
+std::deque<arma::mat> InitializePandya(Operator &Z, size_t nch, std::string orientation);
 
-    void comm111st(const Operator &X, const Operator &Y, Operator &Z);
-    void comm121st(const Operator &X, const Operator &Y, Operator &Z);
-    void comm122st(const Operator &X, const Operator &Y, Operator &Z);
-    void comm222_pp_hh_221st(const Operator &X, const Operator &Y, Operator &Z);
-    void comm222_phst(const Operator &X, const Operator &Y, Operator &Z);
+void comm111st(const Operator &X, const Operator &Y, Operator &Z);
+void comm121st(const Operator &X, const Operator &Y, Operator &Z);
+void comm122st(const Operator &X, const Operator &Y, Operator &Z);
+void comm222_pp_hh_221st(const Operator &X, const Operator &Y, Operator &Z);
+void comm222_phst(const Operator &X, const Operator &Y, Operator &Z);
 
-    // scalar-tensor with a 3b operator
-    void comm331st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
-    void comm223st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
-    void comm231st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
-    void comm232st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
-    void comm133st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
-    void comm132st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
+// scalar-tensor with a 3b operator
+void comm331st(const Operator &X, const Operator &Y, Operator &Z); // PASS the unit test
+void comm223st(const Operator &X, const Operator &Y, Operator &Z); // PASS the unit test
+void comm231st(const Operator &X, const Operator &Y, Operator &Z); // PASS the unit test
+void comm232st(const Operator &X, const Operator &Y, Operator &Z); // PASS the unit test
+void comm133st(const Operator &X, const Operator &Y, Operator &Z); // PASS the unit test
+void comm132st(const Operator &X, const Operator &Y, Operator &Z); // PASS the unit test
 
-}// namespace Commutator
+} // namespace Commutator
 
 #endif
