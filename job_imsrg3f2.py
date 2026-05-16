@@ -47,7 +47,7 @@ FILECONTENT = """#!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=%d
-#SBATCH --output=result/%s.%%j
+#SBATCH --output=result/%s.txt
 #SBATCH --job-name=%s
 cd $SLURM_SUBMIT_DIR
 echo NTHREADS = %d
@@ -111,9 +111,9 @@ for i in range(0, len(A_list)):
                         # ARGS['core_generator'] = 'imaginary-time'
                         # ARGS['valence_generator'] = 'shell-model-imaginary-time'
 
-                        jobname = f"{ARGS['reference']}_{ARGS["approx"]}_{inte}_hw{ARGS['hw']}_emax{ARGS['emax']}"
+                        jobname = f"{ARGS['reference']}_{ARGS['approx']}_{inte}_hw{ARGS['hw']}_emax{ARGS['emax']}"
                         if ARGS["3bme"] != "none":
-                            jobname += f"e3max{ARGS['e3max']}"
+                            jobname += f"_e3max{ARGS['e3max']}"
                         cmd = " ".join([exe] + ["%s=%s" % (x, ARGS[x]) for x in ARGS])
 
                         ### Some optional parameters that we probably want in the output name if we're using them
