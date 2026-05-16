@@ -1,6 +1,6 @@
 import sys, os
 
-sys.path.append("/Users/mac/Desktop/IMSRG3/build/")
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "build"))
 # import numpy as np
 import math
 from pyIMSRG import *
@@ -593,7 +593,6 @@ def main_job(args_v):
         if reference == valence_space:
             if name_op == "Rp2":
                 print("\n IMSRG point proton radius = ", math.sqrt(Op.ZeroBody))
-                print(" IMSRG charge radius = ", math.sqrt(Op.ZeroBody + PROTON_RCH2 + NEUTRON_RCH2 * (A - Z) / Z + DARWIN_FOLDY))
             if (Op.GetJRank() > 0) or (Op.GetTRank() > 0) or (name_op == "ISM") or (name_op == "IVM"):
                 print("\nWriting operator to", path_output + jobname + "_" + name_op + ".op")
                 rw.WriteOperatorHuman(Op, path_output + jobname + "_" + name_op + ".op")

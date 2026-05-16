@@ -1,5 +1,9 @@
 .vscode/
 build/
+output/*
+result/*
+temp/*
+script/*
 *.o
 *.so
 *.gz
