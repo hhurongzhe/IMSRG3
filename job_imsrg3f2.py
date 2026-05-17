@@ -55,7 +55,6 @@ export OMP_NUM_THREADS=%d
 time srun %s
 """
 
-
 ## Loop over multiple jobs to submit
 for i in range(0, len(A_list)):
     Z = Z_list[i]
@@ -143,7 +142,8 @@ for i in range(0, len(A_list)):
 
                         if mode == True:
                             sfile = open("script/" + jobname + ".sh", "w")
-                            sfile.write(FILECONTENT % (NTHREADS, jobname, ARGS["reference"], NTHREADS, NTHREADS, cmd))
+                            slurm_cmd = " \\\n    ".join(cmd.split())
+                            sfile.write(FILECONTENT % (NTHREADS, jobname, ARGS["reference"], NTHREADS, NTHREADS, slurm_cmd))
                             sfile.close()
                             call(["sbatch", "script/" + jobname + ".sh"])
                             sleep(0.5)
