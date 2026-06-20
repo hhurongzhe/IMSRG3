@@ -146,6 +146,7 @@ for i in range(0, len(A_list)):
                             sfile.write(FILECONTENT % (NTHREADS, jobname, NTHREADS, NTHREADS, slurm_cmd))
                             sfile.close()
                             call(["sbatch", "script/" + jobname + ".sh"])
+                            print("Submitted job: %s" % jobname)
                             sleep(0.5)
                         else:
                             call(["mkdir", "-p", "result"])
@@ -156,3 +157,4 @@ for i in range(0, len(A_list)):
                                     print(line, end="")
                                     fout.write(line)
                                 proc.wait()
+                            print("Completed job: %s" % jobname)
