@@ -43,8 +43,8 @@ def main_job(args_v):
     smax_valence = 500
     core_generator = "atan"
     valence_generator = "shell-model-atan"
-    # approx = 'imsrg2'
-    approx = "imsrg3f2"
+    approx = "imsrg2"
+    # approx = "imsrg3f2"
     # approx = 'imsrg3n7'
     ops = ""
     opsfromfile = ""
@@ -410,7 +410,7 @@ def main_job(args_v):
         HNO.ThreeBody.SetMode("pn")
 
     HNO -= BetaCM * 1.5 * hwBetaCM
-    print("Hbare 0b = ", HNO.ZeroBody)
+    print("\nE(HF)         = {:.6f}".format(HNO.ZeroBody))
 
     ### Create an instance of the IMSRGSolver class, used for solving the IMSRG flow equations
     imsrgsolver = IMSRGSolver(HNO)
@@ -472,7 +472,14 @@ def main_job(args_v):
             Hs = imsrgsolver.Transform(HNO)
             triples = imsrgsolver.CalculatePerturbativeTriples()
         Eimsrg = Hs.ZeroBody
-        print("IMSRG Energy = {:.6f}  +  {:.6f}  = {:.6f}".format(Eimsrg, triples, Eimsrg + triples))
+        if approx == "imsrg2":
+            print("E(IMSRG2)     = {:.6f}".format(Eimsrg))
+        elif approx == "imsrg3f2":
+            print("E(IMSRG3f2)   = {:.6f}".format(Eimsrg))
+            print("E(Triples)    = {:.6f}".format(triples))
+            print("E(IMSRG3f2T)  = {:.6f}".format(Eimsrg + triples))
+        else:
+            print("IMSRG Energy = {:.6f}  +  {:.6f}  = {:.6f}".format(Eimsrg, triples, Eimsrg + triples))
 
         rw.WriteTokyoFull(imsrgsolver.GetH_s(), intfile + ".snt")
 
@@ -513,7 +520,7 @@ def main_job(args_v):
         opall = ops
     opall = [element for element in opall if element != ""]
 
-    print(opall)
+    # print(opall)
 
     for op_temp in opall:
 
@@ -546,7 +553,7 @@ def main_job(args_v):
                     optmp = rw.ReadOperator2b_Miyagi(f2name, ms)
                     OpHO.TwoBody = optmp.TwoBody
                 if op_r > 2 and f3name != "":
-                    rw.Read_Darmstadt_3body(f3name, OpHO, f3e1, f3e2, f3e3)
+                    rw.Read_Darmstadt_3body(f3name, OpHO, file3e1max, file3e2max, file3e3max)
 
         else:
             print("The op_temp is wrong!")
@@ -554,7 +561,7 @@ def main_job(args_v):
         Op = hf.TransformToHFBasis(OpHO)  ### OpHO is some operator in the HO basis defined earlier
         Op = Op.DoNormalOrdering()
 
-        print("\n   HF: " + name_op + " zero body = ", Op.ZeroBody, "\n")
+        print(name_op + "(HF)       = {:.6f}".format(Op.ZeroBody))
 
         if find("emax_imsrg", args_v):
             print("Truncating modelspace for IMSRG calculation: emax, e2max, e3max =>", emax_imsrg, e2max_imsrg, e3max_imsrg)
@@ -588,11 +595,14 @@ def main_job(args_v):
             print("doNormalOrdering")
             Op = Op.DoNormalOrderingCore()
 
-        print("\n   IMSRG: " + name_op + " zero body = ", Op.ZeroBody)
+        if approx == "imsrg2":
+            print(name_op + "(IMSRG2)   = {:.6f}".format(Op.ZeroBody))
+        elif approx == "imsrg3f2":
+            print(name_op + "(IMSRG3f2) = {:.6f}".format(Op.ZeroBody))
+        else:
+            print(name_op + "(IMSRG)    = {:.6f}".format(Op.ZeroBody))
 
         if reference == valence_space:
-            if name_op == "Rp2":
-                print("\n IMSRG point proton radius = ", math.sqrt(Op.ZeroBody))
             if (Op.GetJRank() > 0) or (Op.GetTRank() > 0) or (name_op == "ISM") or (name_op == "IVM"):
                 print("\nWriting operator to", path_output + jobname + "_" + name_op + ".op")
                 rw.WriteOperatorHuman(Op, path_output + jobname + "_" + name_op + ".op")

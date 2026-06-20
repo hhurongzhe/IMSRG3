@@ -22,8 +22,8 @@ ARGS["nucleon_mass_correction"] = "true"
 # ARGS["goose_tank"] = "true"
 
 
-# ARGS["approx"] = "imsrg2"
-ARGS["approx"] = "imsrg3f2"
+ARGS["approx"] = "imsrg2"
+# ARGS["approx"] = "imsrg3f2"
 
 intes = ["N2LO_opt"]
 
@@ -32,14 +32,14 @@ intes = ["N2LO_opt"]
 A_list = [4]
 Z_list = [2]
 
-hw_list = [16]
-emax_list = [2]
+hw_list = [20]
+emax_list = [6]
 e3max_list = [18]
 
 
 NTHREADS = 64
-mode = False
-# mode = True
+slurm_mode = False
+# slurm_mode = True
 
 FILECONTENT = """#!/bin/bash
 ##SBATCH --account=hrz
@@ -48,7 +48,7 @@ FILECONTENT = """#!/bin/bash
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=%d
 #SBATCH --output=result/%s.txt
-#SBATCH --job-name=%s
+#SBATCH --job-name=imsrg
 cd $SLURM_SUBMIT_DIR
 echo NTHREADS = %d
 export OMP_NUM_THREADS=%d
@@ -91,8 +91,8 @@ for i in range(0, len(A_list)):
                         ARGS["fmt2"] = "me2j"
                         ARGS["no2b_precision"] = "single"
                         if inte == "N2LO_opt":
-                            ARGS["file2e1max"] = "3 file2e2max=6 file2lmax=3"
-                            ARGS["2bme"] = "/Users/mac/Desktop/2BME/TwBME_N2LO_opt_bare_hw16_emax3_e2max6.me2j.gz"
+                            ARGS["file2e1max"] = "6 file2e2max=12 file2lmax=6"
+                            ARGS["2bme"] = "/Users/mac/Desktop/2BME/TwBME_N2LO_opt_bare_hw20_emax6_e2max12.me2j.gz"
                             ARGS["3bme"] = "none"
                         elif inte == "EM1.8_2.0":
                             ARGS["file2e1max"] = "18 file2e2max=36 file2lmax=18"
@@ -140,10 +140,10 @@ for i in range(0, len(A_list)):
                         ARGS["jobname"] = jobname
                         cmd = "%s %s" % (exe, " ".join(["%s=%s" % (x, ARGS[x]) for x in ARGS]))
 
-                        if mode == True:
+                        if slurm_mode == True:
                             sfile = open("script/" + jobname + ".sh", "w")
                             slurm_cmd = " \\\n    ".join(cmd.split())
-                            sfile.write(FILECONTENT % (NTHREADS, jobname, ARGS["reference"], NTHREADS, NTHREADS, slurm_cmd))
+                            sfile.write(FILECONTENT % (NTHREADS, jobname, NTHREADS, NTHREADS, slurm_cmd))
                             sfile.close()
                             call(["sbatch", "script/" + jobname + ".sh"])
                             sleep(0.5)
