@@ -52,6 +52,8 @@ class ThreeBodyStorage_pn : public ThreeBodyStorage
 
 
   double Norm() const override;
+  void MakeReduced() override;
+  void MakeNotReduced() override;
   void Erase() override; // Set all elements to zero
   void Deallocate() override;
   size_t size() const override;

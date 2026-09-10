@@ -361,11 +361,11 @@ def main_job(args_v):
             if no2b_precision == "half":
                 Hbare.ThreeBody.SetMode("no2bhalf")
             Hbare.ThreeBody.ReadFile([input3bme], [file3e1max, file3e2max, file3e3max, file3e1max])
-            # rw.File3N = input3bme
+            rw.File3N = input3bme
         elif input3bme_type == "mono":
             Hbare.ThreeBody.SetMode("mono")
             Hbare.ThreeBody.ReadFile([input3bme], [file3e1max, file3e2max, file3e3max, file3e1max])
-            # rw.File3N = input3bme
+            rw.File3N = input3bme
         print("done reading 3N")
 
     if find("store_3bme_pn", args_v) and store_3bme_pn:

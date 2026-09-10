@@ -167,6 +167,8 @@ class ThreeBodyStorage
   virtual int CountAllocations() const {NotImplemented(__func__); return 0;};
   bool IsAllocated() const {return is_allocated;};
   bool IsReduced() const {return is_reduced;};
+  virtual void MakeReduced(){NotImplemented(__func__);};
+  virtual void MakeNotReduced(){NotImplemented(__func__);};
   void SetHerm(int h) { herm = h; };
   void SetEmax(int e) { emax = e; };
   void SetE3max(int e) { E3max = e; };

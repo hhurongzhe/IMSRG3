@@ -528,7 +528,7 @@ namespace Commutator
         arma::mat Chi_222_b =  Eta_mat_bra * Eta_mat_nnnn_bra * Gamma_mat;
         if ( ch_bra==ch_ket)
         {
-          Chi_222_b += Chi_222_b.t();
+          Chi_222_b += hGamma * Chi_222_b.t();
         }
         else
         {
@@ -819,7 +819,7 @@ namespace Commutator
               }
               else
               {
-                zij -= IntermediateTwobody[ch_cc](ind_ep, ind_eq);
+                zij -= hGamma * IntermediateTwobody[ch_cc](ind_ep, ind_eq);
               }
 
               if (e <= q)
@@ -828,7 +828,7 @@ namespace Commutator
               }
               else
               {
-                zij += IntermediateTwobody[ch_cc](ind_qe, ind_pe);
+                zij += hGamma * IntermediateTwobody[ch_cc](ind_qe, ind_pe);
               }
             }
             Z.OneBody(p, q) += zij / j2hat2;
@@ -1739,7 +1739,7 @@ namespace Commutator
           continue;
         // Diagram IIa and IIc
         arma::mat Multi_matirx = Chi_III_Op.GetMatrix(ch_bra, ch_bra) * Gamma.TwoBody.GetMatrix(ch_bra, ch_ket);
-        Multi_matirx += hZ * Gamma.TwoBody.GetMatrix(ch_bra, ch_ket) * (Chi_III_Op.GetMatrix(ch_ket, ch_ket).t());
+        Multi_matirx += hZ * hGamma * Gamma.TwoBody.GetMatrix(ch_bra, ch_ket) * (Chi_III_Op.GetMatrix(ch_ket, ch_ket).t());
         // Diagram IIIc and Diagram IIId
         Multi_matirx += -Eta.TwoBody.GetMatrix(ch_bra) * Chi_VI_Op.GetMatrix(ch_bra, ch_ket) - (Chi_VI_II_Op.GetMatrix(ch_bra, ch_ket) * Eta.TwoBody.GetMatrix(ch_ket));
         Z2.GetMatrix(ch_bra, ch_ket) += Multi_matirx;

@@ -178,6 +178,11 @@ Operator &Operator::operator+=(const Operator &rhs)
   int rank_lhs = this->GetParticleRank();
   int rank_rhs = rhs.GetParticleRank();
   int maxrank = std::max( rank_lhs, rank_rhs );
+  if (this->IsReduced() != rhs.IsReduced())
+  {
+    std::cout << "!!!! Danger! Adding operators that aren't both reduced! Dying !!!!!!!" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
   ZeroBody += rhs.ZeroBody;
   OneBody += rhs.OneBody;
   TwoBody += rhs.TwoBody;
@@ -501,7 +506,7 @@ Operator Operator::DoNormalOrdering2(int sign, std::set<index_t> occupied) const
   if (IsNonHermitian()) herm =0;
 
   index_t norbits = modelspace->GetNumberOrbits();
-  if (TwoBody.Norm() > 1e-7)
+  // Normal ordering must also retain contributions from small matrix elements.
   {
     for (auto &itmat : TwoBody.MatEl)
     {
@@ -1048,7 +1053,18 @@ void Operator::MakeReduced()
     std::cout << "Trying to reduce an operator with J rank = " << rank_J << ". Not good!!!" << std::endl;
     return;
   }
-  ApplyWignerEckartJFactor( true ); // true means multiply by sqrt(2J+1)
+//  ApplyWignerEckartJFactor( true ); // true means multiply by sqrt(2J+1)
+
+  for ( auto& a : modelspace->all_orbits)
+  {
+    Orbit& oa = modelspace->GetOrbit(a);
+    OneBody.row(a) *= sqrt(oa.j2+1);
+  }
+  TwoBody.MakeReduced();
+  if ( particle_rank > 2 )
+  {
+     ThreeBody.MakeReduced();
+  }
 
   is_reduced = true;
 }
@@ -1067,57 +1083,23 @@ void Operator::MakeNotReduced()
     std::cout << "Trying to un-reduce an operator with J rank = " << rank_J << ". Not good!!!" << std::endl;
     return;
   }
-  ApplyWignerEckartJFactor( false ); // false means divide rather than multiply by sqrt(2J+1).
+//  ApplyWignerEckartJFactor( false ); // false means divide rather than multiply by sqrt(2J+1).
+
+  for ( auto& a : modelspace->all_orbits)
+  {
+    Orbit& oa = modelspace->GetOrbit(a);
+    OneBody.row(a) /= sqrt(oa.j2+1);
+  }
+  TwoBody.MakeNotReduced();
+  if ( particle_rank > 2 )
+  {
+     ThreeBody.MakeNotReduced();
+  }
 
   is_reduced = false;
 }
 
 
-// Multiply or divide by sqrt(2J+1) to convert between reduced/non-reduced matrix elements
-void Operator::ApplyWignerEckartJFactor( bool multiply )
-{
-  for (size_t a = 0; a < modelspace->GetNumberOrbits(); ++a)
-  {
-    Orbit &oa = modelspace->GetOrbit(a);
-    double WE_factor = multiply ? sqrt(oa.j2+1) : 1.0/sqrt(oa.j2+1);
-    for (size_t b : OneBodyChannels.at({oa.l, oa.j2, oa.tz2}))
-    {
-      //      if (b<a) continue;
-         OneBody(a, b) *= WE_factor;
-      //      OneBody(b,a) *= sqrt(oa.j2+1);
-    }
-  }
-  for (auto &itmat : TwoBody.MatEl)
-  {
-    TwoBodyChannel &tbc = modelspace->GetTwoBodyChannel(itmat.first[0]);
-    double WE_factor = multiply ? sqrt(2 * tbc.J + 1)  : 1.0 / sqrt(2 * tbc.J + 1);
-    itmat.second *= WE_factor;
-//    itmat.second *= sqrt(2 * tbc.J + 1);
-  }
-
-  if (particle_rank > 2)
-  {
-    for (auto &it : ThreeBody.Get_ch_start())
-    {
-      size_t ThCH_bra = it.first.ch_bra;
-      size_t ThCH_ket = it.first.ch_ket;
-      ThreeBodyChannel &Tbc_bra = modelspace->GetThreeBodyChannel(ThCH_bra);
-      ThreeBodyChannel &Tbc_ket = modelspace->GetThreeBodyChannel(ThCH_ket);
-      double WE_factor = multiply ? sqrt(Tbc_bra.twoJ + 1) : 1.0/sqrt(Tbc_bra.twoJ + 1) ;
-      size_t nbras3 = Tbc_bra.GetNumberKets();
-      for (size_t ibra = 0; ibra < nbras3; ibra++)
-      {
-        size_t nket3 = Tbc_ket.GetNumberKets();
-        size_t iket_min = (ThCH_bra==ThCH_ket) ? ibra : 0;
-        for (size_t iket = iket_min; iket < nket3; iket++)
-        {
-          double ME3b = WE_factor *  ThreeBody.GetME_pn_ch(ThCH_bra, ThCH_ket, ibra, iket);
-          ThreeBody.SetME_pn_ch(ThCH_bra, ThCH_ket, ibra, iket, ME3b );
-        }
-      }
-    }
-  }
-}
 
 
 
@@ -1408,6 +1390,11 @@ double Operator::GetMP2_3BEnergy()
   //   if ( not ThreeBody.is_allocated ) return 0;
   if (not ThreeBody.IsAllocated())
     return 0;
+  if (not ThreeBody.Is_PN_Mode())
+  {
+    std::cout << __FILE__ << " " << __func__ << " needs 3N in pn format. Returning zero." << std::endl;
+    return 0;
+  }
   size_t nch3 = modelspace->GetNumberThreeBodyChannels();
 #pragma omp parallel for schedule(dynamic, 1) reduction(+ : Emp2)
   for (size_t ch3 = 0; ch3 < nch3; ch3++)

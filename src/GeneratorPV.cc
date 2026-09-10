@@ -21,6 +21,7 @@ void GeneratorPV::AddToEtaPV(Operator &H_s, Operator &HPV_s, Operator &Eta_s, Op
 {
    double start_time = omp_get_wtime();
    H = &H_s;
+   H_denom = &H_s;
    Eta = &Eta_s;
    V = &HPV_s;
    V -> MakeNotReduced();

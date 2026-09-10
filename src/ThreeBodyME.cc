@@ -23,7 +23,7 @@ ThreeBodyME::ThreeBodyME()
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms)
-: threebody_storage(new ThreeBodyStorage_iso()), modelspace(ms), E3max(ms->E3max), emax(ms->GetEMax3Body()), herm(1)
+: threebody_storage(new ThreeBodyStorage_iso(ms)), modelspace(ms), E3max(ms->E3max), emax(ms->GetEMax3Body()), herm(1)
 {}
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int rJ, int rT, int p)
@@ -352,6 +352,12 @@ void ThreeBodyME::SwitchToPN_and_discard()
 void ThreeBodyME::SetMode(std::string mode)
 {
   double t_start = omp_get_wtime();
+  // Re-selecting the current mode must not discard existing matrix elements.
+  if (threebody_storage->GetStorageMode() == mode)
+  {
+    std::cout << "In " << __func__ << " but mode is already " << mode << ". Doing nothing." << std::endl;
+    return;
+  }
   if (mode == "isospin" )
   {
 //      threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_iso( modelspace, E3max, rank_J, rank_T, parity)  );
@@ -385,6 +391,16 @@ void ThreeBodyME::SetMode(std::string mode)
   threebody_storage->Allocate();
 //  storage_mode = pn;
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+}
+
+void ThreeBodyME::MakeReduced()
+{
+   threebody_storage->MakeReduced();
+}
+
+void ThreeBodyME::MakeNotReduced()
+{
+   threebody_storage->MakeNotReduced();
 }
 
 bool ThreeBodyME::IsKetValid( int Jab_in, int twoJ, size_t a_in, size_t b_in, size_t c_in) const
@@ -525,7 +541,4 @@ std::string ThreeBodyME::GetStorageMode() const
 {
   return threebody_storage->GetStorageMode();
 }
-
-
-
 

@@ -479,7 +479,7 @@ void IMSRGSolver::Solve_magnus_modified_euler()
 
     H_temp = FlowingOps[0] + ds * Commutator::Commutator(Eta, FlowingOps[0]);
     //      generator.AddToEta(&H_temp,&Eta);
-    generator.AddToEta(H_temp, Eta);
+    generator.AddToEta(H_temp, H_temp, Eta);
 
     Eta *= ds * 0.5; // Here's the modified Euler step.
 
@@ -1171,9 +1171,13 @@ double IMSRGSolver::CalculatePerturbativeTriples()
   Wbar.OneBody = Hs.OneBody;
   Wbar.TwoBody = Hs.TwoBody;
 
+  // Sum induced triples over the full space without allocating 3-body matrix elements.
+  int E3max_save = Hs.modelspace->GetE3max();
+  Hs.modelspace->SetE3max(3 * Hs.modelspace->GetEmax());
   Commutator::perturbative_triples = true;
   Commutator::comm223ss(omega, Htilde, Wbar);
   Commutator::perturbative_triples = false; // turn it back off in case we want to do any more transformations
+  Hs.modelspace->SetE3max(E3max_save);
 
   double pert_triples = Wbar.ZeroBody;
 

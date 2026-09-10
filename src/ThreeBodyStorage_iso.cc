@@ -321,7 +321,7 @@ double ThreeBodyStorage_iso::Norm() const
 {
   double norm = 0;
   for (auto me : MatEl)  norm += me*me;
-  return norm;
+  return sqrt(norm);
 }
 
 // Set all elements to zero
@@ -598,6 +598,5 @@ std::vector<std::pair<size_t,double>> ThreeBodyStorage_iso::AccessME(int Jab_in,
    }
    return elements;
 }
-
 
 

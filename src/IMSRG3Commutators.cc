@@ -595,6 +595,7 @@ namespace Commutator
     auto &Y1 = Y.OneBody;
     auto &Y3 = Y.ThreeBody;
     auto &Z2 = Z.TwoBody;
+    if (X.GetParticleRank()<3 and Y.GetParticleRank()<3) return;
     double x3norm = X.ThreeBodyNorm();
     double y3norm = Y.ThreeBodyNorm();
 
@@ -4494,8 +4495,8 @@ namespace Commutator
       {
         if (y_channel_diag)
         {
-          size_t ch_internal_xy = it.first.ch_ket;
-          size_t ch_internal_yx = it.first.ch_bra;
+          ch_internal_xy = it.first.ch_ket;
+          ch_internal_yx = it.first.ch_bra;
         }
         else
         {

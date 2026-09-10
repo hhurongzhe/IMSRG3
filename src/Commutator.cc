@@ -22,6 +22,26 @@
 
 #include <omp.h>
 
+#if __has_include(<openblas_config.h>)
+#include <openblas_config.h>
+extern "C" int openblas_get_parallel(void);
+#endif
+
+namespace
+{
+  bool ConcurrentBlasSafe()
+  {
+#ifdef OPENBLAS_VERSION
+    // SINGLE_THREADED OpenBLAS builds may lack USE_LOCKING. Concurrent
+    // GEMMs then corrupt results even with OPENBLAS_NUM_THREADS=1.
+    // Conservatively serialize these loops when locking cannot be verified.
+    return openblas_get_parallel() != 0;
+#else
+    return true;
+#endif
+  }
+}
+
 /// Commutator expressions for second-quantized operators
 namespace Commutator
 {
@@ -677,94 +697,88 @@ namespace Commutator
     // std::cout << "Beg comm220ss " << std::endl;
     double t_start = omp_get_wtime();
     double z0 = 0;
-    double comm = 0;
-    auto &X2 = X.TwoBody;
-    auto &Y2 = Y.TwoBody;
+    int hX = X.IsHermitian() ? +1 : -1;
+    int hY = Y.IsHermitian() ? +1 : -1;
     int pX = X.GetParity();
     int pY = Y.GetParity();
     int pZ = (pX + pY) % 2; // Added to make z.parity correct when calling only UnitTest and not through the CommutatorScalarScalar
-    if (X.GetParticleRank() < 2 or Y.GetParticleRank() < 2)
-      return;
-    if (Z.IsAntiHermitian())
+    if (    X.GetParticleRank() < 2 or Y.GetParticleRank() < 2
+         or Z.IsAntiHermitian()
+         or  Z.GetJRank() > 0 or Z.GetTRank() > 0 or pZ != 0)
     {
-      return;
-    }
-    if (Z.GetJRank() > 0 or Z.GetTRank() > 0 or pZ != 0)
-    {
+      Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
       return;
     }
 
     std::vector<size_t> ch_bra_list, ch_ket_list;
     auto ch_iter = X.TwoBody.MatEl;
     for (auto &iter : ch_iter)
-    { 
+    {
       ch_bra_list.push_back(iter.first[0]);
       ch_ket_list.push_back(iter.first[1]);
     }
     int nch = ch_bra_list.size();
+#pragma omp parallel for schedule(dynamic) reduction(+:z0) if(ConcurrentBlasSafe())
     for (int ich = 0; ich < nch; ++ich)
     {
+
       size_t ch_bra = ch_bra_list[ich];
       size_t ch_ket = ch_ket_list[ich];
-      // std::cout << ch_bra << " " << ch_ket << std::endl;
+
       TwoBodyChannel &tbc_bra = X.modelspace->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel &tbc_ket = X.modelspace->GetTwoBodyChannel(ch_ket);
       int J = tbc_bra.J;
-      int nbras = tbc_bra.GetNumberKets();
-      int nkets = tbc_ket.GetNumberKets();
 
-      for (int ibra = 0; ibra < nbras; ibra++)
+      // First <bra|X|ket><ket|Y|bra>, with bra=hh and ket = pp (or the equivalent with occupation factors)
+      auto hh = tbc_bra.GetKetIndex_hh();
+
+      auto nn = tbc_bra.Ket_occ_hh;
+      auto hh_ket = tbc_ket.GetKetIndex_hh();
+      auto ph_ket = tbc_ket.GetKetIndex_ph();
+      arma::vec nbarnbar = arma::ones(tbc_ket.GetNumberKets() );
+      for (size_t i=0;i<hh_ket.size(); i++)
       {
-        Ket &bra = tbc_bra.GetKet(ibra);
-        Orbit &oa = X.modelspace->GetOrbit(bra.p);
-        Orbit &ob = X.modelspace->GetOrbit(bra.q);
-        // std::cout<< oa.n << oa.l << oa.j2 << oa.tz2 << oa.occ << std::endl;
-        // std::cout<< ob.n << ob.l << ob.j2 << ob.tz2 << ob.occ<< std::endl;
-        size_t a = bra.p;
-        size_t b = bra.q;
-        double na = bra.op->occ;
-        double nb = bra.oq->occ;
-        double ab_symm = 2;
-        if (a == b)
-          ab_symm = 1;
-        int ketmin = 0;
-        if (ch_bra == ch_ket)
-          ketmin = ibra;
-        for (int iket = ketmin; iket < nkets; iket++)
-        {
-          Ket &ket = tbc_ket.GetKet(iket);
-          size_t c = ket.p;
-          size_t d = ket.q;
-          Orbit &oc = X.modelspace->GetOrbit(ket.p);
-          Orbit &od = X.modelspace->GetOrbit(ket.q);
-          double nc = ket.op->occ;
-          double nd = ket.oq->occ;
-          double occfactor = na * nb * (1 - nc) * (1 - nd);
-          double cd_symm = 2;
-          if (c == d)
-            cd_symm = 1;
-          // std::cout<< a<<" "<<b<<" "<<c<<" "<<d<<std::endl;
-          double xabcd = X2.GetTBME_J(J, J, bra.p, bra.q, ket.p, ket.q);
-          double yabcd = Y2.GetTBME_J(J, J, bra.p, bra.q, ket.p, ket.q);
-          double xcdab = X2.GetTBME_J(J, J, ket.p, ket.q, bra.p, bra.q);
-          double ycdab = Y2.GetTBME_J(J, J, ket.p, ket.q, bra.p, bra.q);
-          comm = (xabcd * ycdab - yabcd * xcdab);
-          double term = 0;
-          term += 1. / 4 * (2 * J + 1) * ab_symm * cd_symm * occfactor * comm;
-          if (pX == 1 and pY == 1)
-          {
-            term /= 2;
-            comm = xcdab*yabcd - ycdab * xabcd;
-            term += 1. / 4 * (2 * J + 1) * ab_symm * cd_symm * nc*nd*(1-na)*(1-nb) * comm;
-          }
-          z0 += term;
-        }
+         nbarnbar[hh_ket[i]] = tbc_ket.Ket_unocc_hh[i];
       }
+      for (size_t i=0;i<ph_ket.size(); i++)
+      {
+         nbarnbar[ph_ket[i]] = tbc_ket.Ket_unocc_ph[i];
+      }
+      const auto& X2 = X.TwoBody.GetMatrix(ch_bra,ch_ket).rows(hh);
+
+      arma::mat Y2 = Y.TwoBody.GetMatrix(ch_bra,ch_ket).rows(hh);
+      Y2.each_row() %= nbarnbar.t();
+      z0 += 2 * (2*J + 1) * hY* arma::sum(arma::diagvec(X2 * Y2.t() ) % nn); // This could be made more efficient, but who cares?
+
+      // if not channel diagonal, we need to the same thing with ket=hh and bra==pp
+      if ( ch_bra != ch_ket)
+      {
+        auto hh = tbc_ket.GetKetIndex_hh();
+
+        auto nn = tbc_ket.Ket_occ_hh;
+	auto hh_bra = tbc_bra.GetKetIndex_hh();
+	auto ph_bra = tbc_bra.GetKetIndex_ph();
+        arma::vec nbarnbar = arma::ones(tbc_bra.GetNumberKets() );
+	for (size_t i=0;i<hh_bra.size(); i++)
+        {
+	   nbarnbar[hh_bra[i]] = tbc_bra.Ket_unocc_hh[i];
+	}
+	for (size_t i=0;i<ph_bra.size(); i++)
+	{
+           nbarnbar[ph_bra[i]] = tbc_bra.Ket_unocc_ph[i];
+	}
+        const auto& X2 = X.TwoBody.GetMatrix(ch_bra,ch_ket).cols(hh);
+
+        Y2 = Y.TwoBody.GetMatrix(ch_bra,ch_ket).cols(hh);
+        Y2.each_col() %= nbarnbar;
+        z0 += 2 * (2*J + 1) * hX* arma::sum(arma::diagvec(X2.t() * Y2 ) % nn); // This could be made more efficient, but who cares?
+
+      }// if ch_bra != ch_ket
+
     }
     Z.ZeroBody += z0;
-    // std::cout<<"Z0="<< Z.ZeroBody <<std::endl;
+
     Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
-    // std::cout << "End comm220ss " << std::endl;
   }
 
   //*****************************************************************************************
@@ -810,7 +824,7 @@ namespace Commutator
     index_t norbits = Z.modelspace->all_orbits.size();
     int hZ = Z.IsHermitian() ? 1 : -1;
 
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(dynamic,1)
     for (index_t indexi = 0; indexi < norbits; ++indexi)
     {
       auto i = indexi;
@@ -902,8 +916,8 @@ namespace Commutator
     int hZ = Z.IsHermitian() ? 1 : -1;
 
 
-    TwoBodyME Mpp(Z.modelspace, Z.GetJRank(), Z.GetTRank(), Z.GetParity());
-    TwoBodyME Mhh(Z.modelspace, Z.GetJRank(), Z.GetTRank(), Z.GetParity());
+    TwoBodyME Mpp = 0 * Z.TwoBody;
+    TwoBodyME Mhh = Mpp;
     ConstructScalarMpp_Mhh(X, Y, Z, Mpp, Mhh);
 
     int norbits = Z.modelspace->all_orbits.size();
@@ -930,20 +944,18 @@ namespace Commutator
           double nbarc = 1.0 - nc;
           int Jmin = std::max(std::abs(oc.j2 - oi.j2), std::abs(oc.j2 - oj.j2)) / 2;
           int Jmax = (oc.j2 + std::min(oi.j2, oj.j2)) / 2;
-          int parity_phase = hZ == 1 ? 1 : Z.modelspace->phase(oc.l);
-          // int parity_phase = 1;
           if (std::abs(nc) > 1e-9)
           {
             for (int J = Jmin; J <= Jmax; J++)
             {
-              zij += (2 * J + 1) * nc * parity_phase * Mpp.GetTBME_J(J, c, i, c, j);
+              zij += (2 * J + 1) * nc * Mpp.GetTBME_J(J, c, i, c, j);
             }
           }
           if (std::abs(nbarc) > 1e-9)
           {
             for (int J = Jmin; J <= Jmax; J++)
             {
-              zij += (2 * J + 1) * parity_phase * nbarc * Mhh.GetTBME_J(J, c, i, c, j);
+              zij += (2 * J + 1) * nbarc * Mhh.GetTBME_J(J, c, i, c, j);
            }
           }
         }
@@ -1252,9 +1264,9 @@ namespace Commutator
       ch_ket_list.push_back(ch_ket);
     }
     int nch = ch_bra_list.size();
-    // #ifndef OPENBLAS_NOUSEOMP
-    // #pragma omp parallel for schedule(dynamic, 1)
-    // #endif
+    #ifndef OPENBLAS_NOUSEOMP
+    #pragma omp parallel for schedule(dynamic, 1) if(ConcurrentBlasSafe())
+    #endif
     for (int ich = 0; ich < nch; ++ich)
     {
       int ch_bra = ch_bra_list[ich];
