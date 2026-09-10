@@ -1,9 +1,13 @@
 .vscode/
 build/
 output/*
+!output/.gitkeep
 result/*
+!result/.gitkeep
 temp/*
+!temp/.gitkeep
 script/*
+!script/.gitkeep
 *.o
 *.so
 *.gz
