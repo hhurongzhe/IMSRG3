@@ -8,7 +8,7 @@ ELEM = ['n','H','He','Li','Be','B','C','N','O','F','Ne','Na','Mg','Al','Si','P',
 
 path_pre = sys.path[0]
 print("current path: " + path_pre)
-exe = sys.executable + " " + path_pre + "/pyIMSRG3f2.py"
+exe = sys.executable + " " + path_pre + "/pyIMSRG.py"
 
 
 ARGS = {}
@@ -29,8 +29,8 @@ intes = ["EM1.8_2.0"]
 
 # A_list = [4, 16, 22, 24, 36, 40, 48, 52, 54, 56, 68, 78, 90, 100, 114, 120, 132, 208]
 # Z_list = [2, 8, 8, 8, 20, 20, 20, 20, 20, 28, 28, 28, 40, 50, 50, 50, 50, 82]
-A_list = [10]
-Z_list = [5]
+A_list = [60]
+Z_list = [30]
 
 hw_list = [16]
 emax_list = [6]
@@ -86,7 +86,7 @@ for i in range(0, len(A_list)):
                         ARGS["goose_tank"] = "false"
                         # ARGS['eta_criterion'] = '1e-5'
 
-                        ARGS["valence_space"] = "p-shell"
+                        ARGS["valence_space"] = "fp-shell"
 
                         ARGS["fmt2"] = "me2j"
                         ARGS["no2b_precision"] = "single"

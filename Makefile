@@ -34,6 +34,9 @@ ifeq ($(UNAME_S), Darwin) # macOS 系统
 	CC = g++-15
 	CXX = g++-15
 	FLAGS += -DNO_x86
+	# GCC's built-in SDK path may be stale after a Command Line Tools update.
+	MACOS_SDK := $(shell xcrun --sdk macosx --show-sdk-path)
+	FLAGS += -isysroot "$(MACOS_SDK)"
 	PYTHON_LDFLAGS += -undefined dynamic_lookup
 	ALL += $(BUILD_DIR)/pyIMSRG/__init__.pyi
 endif
@@ -84,7 +87,7 @@ $(BUILD_DIR)/pyIMSRG.so: $(OBJ) $(PYIMSRG_OBJ) | $(BUILD_DIR)
 	$(CXX) $^ $(SOFLAGS) -o $@ $(LDFLAGS) $(PYTHON_LDFLAGS) $(LIBS)
 
 $(BUILD_DIR)/pyIMSRG/__init__.pyi: $(BUILD_DIR)/pyIMSRG.so | $(BUILD_DIR)
-	PYTHONPATH=$(BUILD_DIR) $(PYTHON) -m pybind11_stubgen pyIMSRG -o $(BUILD_DIR) $(STUBGEN_FLAGS)
+	cd $(BUILD_DIR) && $(PYTHON) -m pybind11_stubgen pyIMSRG -o . $(STUBGEN_FLAGS)
 
 $(BUILD_DIR) $(OBJ_DIR):
 	mkdir -p $@

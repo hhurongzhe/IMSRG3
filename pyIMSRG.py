@@ -50,7 +50,7 @@ def main_job(args_v):
     opsfromfile = ""
 
     print("\n---------------")
-    print("######  imsrg++ build version: ", BuildVersion)
+    print("######  imsrg++ build version: ", BuildVersion())
     print("main_job of ReadIMSRG3f2.py:", args_v)
     for args in args_v:
         arr = args.split("=")

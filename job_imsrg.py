@@ -8,7 +8,7 @@ ELEM = ['n','H','He','Li','Be','B','C','N','O','F','Ne','Na','Mg','Al','Si','P',
 
 path_pre = sys.path[0]
 print("current path: " + path_pre)
-exe = sys.executable + " " + path_pre + "/pyIMSRG3f2.py"
+exe = sys.executable + " " + path_pre + "/pyIMSRG.py"
 
 
 ARGS = {}
