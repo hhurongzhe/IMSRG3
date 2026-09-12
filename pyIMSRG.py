@@ -1,6 +1,6 @@
 import sys, os
 
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "build"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "build"))
 # import numpy as np
 import math
 from pyIMSRG import *

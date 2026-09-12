@@ -29,8 +29,8 @@ intes = ["EM1.8_2.0"]
 
 # A_list = [4, 16, 22, 24, 36, 40, 48, 52, 54, 56, 68, 78, 90, 100, 114, 120, 132, 208]
 # Z_list = [2, 8, 8, 8, 20, 20, 20, 20, 20, 28, 28, 28, 40, 50, 50, 50, 50, 82]
-A_list = [60]
-Z_list = [30]
+A_list = [76]
+Z_list = [32]
 
 hw_list = [16]
 emax_list = [6]
@@ -86,7 +86,7 @@ for i in range(0, len(A_list)):
                         ARGS["goose_tank"] = "false"
                         # ARGS['eta_criterion'] = '1e-5'
 
-                        ARGS["valence_space"] = "fp-shell"
+                        ARGS["valence_space"] = "jj44"
 
                         ARGS["fmt2"] = "me2j"
                         ARGS["no2b_precision"] = "single"
@@ -104,8 +104,9 @@ for i in range(0, len(A_list)):
                             print("Please check input of intes:", inte)
                             break
 
-                        ARGS["Operators"] = ""
+                        # ARGS["Operators"] = ""
                         # ARGS['Operators'] = 'Rp2,Rn2,Rm2,M1,E2,GamowTeller,Fermi'
+                        ARGS["Operators"] = "M0nu_GT_10.0_none,M0nu_F_10.0_none,M0nu_T_10.0_none"
 
                         # ARGS['core_generator'] = 'imaginary-time'
                         # ARGS['valence_generator'] = 'shell-model-imaginary-time'
@@ -156,5 +157,7 @@ for i in range(0, len(A_list)):
                                 for line in proc.stdout:
                                     print(line, end="")
                                     fout.write(line)
-                                proc.wait()
+                                returncode = proc.wait()
+                            if returncode != 0:
+                                sys.exit("Failed job: %s (exit code %d); see %s" % (jobname, returncode, logfile))
                             print("Completed job: %s" % jobname)
